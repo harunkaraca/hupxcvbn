@@ -5,6 +5,8 @@ import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
 import androidx.room.Room
 import com.hk.hulkapps.BuildConfig
+import com.hk.hulkapps.data.service.Api
+import com.hk.hulkapps.data.source.BaseDataSource
 import dagger.Module
 import dagger.Provides
 import kotlinx.coroutines.CoroutineDispatcher
@@ -70,5 +72,18 @@ object AppModule {
     @Singleton
     @Provides
     fun provideIoDispatcher() = Dispatchers.IO
+
+    @JvmStatic
+    @Singleton
+    @Provides
+    fun api(retrofit: Retrofit) = retrofit.create(Api::class.java)
+
+    @JvmStatic
+    @Singleton
+    @RemoteDataSource
+    @Provides
+    fun provideRemoteDataSource(api: Api,ioDispatcher: CoroutineDispatcher) : BaseDataSource {
+        return com.hk.hulkapps.data.source.remote.RemoteDataSource(api,ioDispatcher)
+    }
 
 }
