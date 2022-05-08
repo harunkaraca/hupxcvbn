@@ -1,6 +1,7 @@
 package com.hk.hulkapps
 
 import android.app.Application
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.work.Configuration
 import androidx.work.WorkManager
 import androidx.work.WorkerFactory
@@ -25,6 +26,7 @@ class MyApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         if (BuildConfig.DEBUG) Timber.plant(Timber.DebugTree())
 //        WorkManager.initialize(this, Configuration.Builder().setWorkerFactory(workerFactory).build())
     }

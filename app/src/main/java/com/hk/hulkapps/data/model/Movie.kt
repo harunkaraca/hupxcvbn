@@ -17,5 +17,8 @@ data class Video (
     @SerializedName("sources"     ) var sources     : ArrayList<String> = arrayListOf(),
     @SerializedName("subtitle"    ) var subtitle    : String?           = null,
     @SerializedName("thumb"       ) var thumb       : String?           = null,
-    @SerializedName("title"       ) var title       : String?           = null
+    @SerializedName("title"       ) var title       : String?           = null,
+    var didDownload : Boolean = false,
+    var watchedTime : Int = 0
 )
+

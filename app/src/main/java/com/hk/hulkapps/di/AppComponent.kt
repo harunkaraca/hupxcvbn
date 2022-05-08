@@ -3,6 +3,7 @@ package com.hk.hulkapps.di
 import android.content.Context
 import android.content.SharedPreferences
 import com.hk.hulkapps.data.BaseRepository
+import com.hk.hulkapps.ui.main.di.MainComponent
 import dagger.*
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -18,6 +19,7 @@ interface AppComponent {
     interface Factory {
         fun create(@BindsInstance applicationContext: Context): AppComponent
     }
+    fun mainComponent(): MainComponent.Factory
 
     val baseRepository: BaseRepository
     val context: Context

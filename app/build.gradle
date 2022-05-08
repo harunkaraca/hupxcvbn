@@ -20,11 +20,13 @@ android {
     buildTypes {
         debug {
             buildConfigField("String", "BASE_URL", "\"https://movies.free.beeceptor.com\"")
+            buildConfigField("String", "BASE_IMAGE_URL", "\"http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/\"")
         }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             buildConfigField("String", "BASE_URL", "\"https://movies.free.beeceptor.com\"")
+            buildConfigField("String", "BASE_IMAGE_URL", "\"http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/\"")
         }
     }
     compileOptions {
