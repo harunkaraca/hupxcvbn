@@ -1,5 +1,6 @@
 package com.hk.hulkapps.ui.main
 
+import android.app.Application
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.lifecycle.LiveData
@@ -34,7 +35,6 @@ class MainViewModel  @Inject constructor(private val baseRepository: BaseReposit
         loadMovies()
     }
     fun loadMovies(){
-        Log.i("MainViewModel","run MainViewModel")
         viewModelScope.launch {
             val result=baseRepository.getMovies()
             if(result is Success){
@@ -46,5 +46,7 @@ class MainViewModel  @Inject constructor(private val baseRepository: BaseReposit
             }
             _dataLoading.value = false
         }
+
     }
+
 }

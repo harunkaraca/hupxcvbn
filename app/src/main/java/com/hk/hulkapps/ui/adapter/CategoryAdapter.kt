@@ -1,5 +1,7 @@
 package com.hk.hulkapps.ui.adapter
 
+import android.content.Context
+import android.net.Uri
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -15,6 +17,8 @@ import com.hk.hulkapps.data.model.Category
 import com.hk.hulkapps.data.model.Video
 import com.hk.hulkapps.util.getProgressDrawable
 import com.hk.hulkapps.util.loadImage
+import java.io.File
+import java.net.URL
 
 class CategoryAdapter(var categories:MutableList<Category>):RecyclerView.Adapter<CategoryAdapter.CategoryViewHolder>() {
     fun updateData(newData:List<Category>){
@@ -51,43 +55,49 @@ class CategoryAdapter(var categories:MutableList<Category>):RecyclerView.Adapter
 
 
     class VideoAdapter(var videos:MutableList<Video>):RecyclerView.Adapter<VideoAdapter.VideoViewHolder>() {
-
+        private var context: Context?=null
         class VideoViewHolder(view: View):RecyclerView.ViewHolder(view){
-
-            private val txtName=view.findViewById<TextView>(R.id.txtName)
-            private val txtDescription=view.findViewById<TextView>(R.id.txtDescription)
-            private val iv=view.findViewById<ImageView>(R.id.iv)
-            private val ivPlay=view.findViewById<ImageView>(R.id.ivPlay)
-            private val videoView=view.findViewById<VideoView>(R.id.videoView)
-            private val progressDrawable=getProgressDrawable(view.context)
-            fun bind(video: Video){
-                txtName.text=video.title
-                txtDescription.text=video.description
-                iv.loadImage(BuildConfig.BASE_IMAGE_URL+video.thumb,progressDrawable)
-                ivPlay.setOnClickListener {
-                    ivPlay.visibility=View.GONE
-                    iv.visibility=View.GONE
-                    videoView.visibility=View.VISIBLE
-                    videoView.setVideoPath(video.sources[0])
-                    videoView.start()
-                    videoView.seekTo(video.watchedTime)
-                }
-                videoView.setOnClickListener {
-                    video.watchedTime=videoView.currentPosition
-                    ivPlay.visibility=View.VISIBLE
-                    iv.visibility=View.VISIBLE
-                    videoView.visibility=View.GONE
-                    videoView.stopPlayback()
-                }
-            }
+            val txtName=view.findViewById<TextView>(R.id.txtName)
+            val txtDescription=view.findViewById<TextView>(R.id.txtDescription)
+            val iv=view.findViewById<ImageView>(R.id.iv)
+            val ivPlay=view.findViewById<ImageView>(R.id.ivPlay)
+            val videoView=view.findViewById<VideoView>(R.id.videoView)
+            val progressDrawable=getProgressDrawable(view.context)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VideoViewHolder {
+            this.context=parent.context
             return VideoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.item_video,parent,false))
         }
 
         override fun onBindViewHolder(holder: VideoViewHolder, position: Int) {
-            holder.bind(videos[position])
+            val video=videos[position]
+            holder.txtName.text=video.title
+            holder.txtDescription.text=video.description
+            holder.iv.loadImage(BuildConfig.BASE_IMAGE_URL+video.thumb,holder.progressDrawable)
+            holder.ivPlay.setOnClickListener {
+                holder.ivPlay.visibility=View.GONE
+                holder.iv.visibility=View.GONE
+                holder.videoView.visibility=View.VISIBLE
+                if(video.didDownload){
+                    var url=video.sources[0]
+                    val fileName = url.substring( url.lastIndexOf('/')+1, url.length )
+                    var fileUri=Uri.fromFile(File(context!!.filesDir.absolutePath+"/"+fileName))
+                    holder.videoView.setVideoURI(fileUri)
+                    Log.i("asd","get from local")
+                }
+                else
+                    holder.videoView.setVideoPath(video.sources[0])
+                holder.videoView.start()
+                holder.videoView.seekTo(video.watchedTime)
+            }
+            holder.videoView.setOnClickListener {
+                video.watchedTime=holder.videoView.currentPosition
+                holder.ivPlay.visibility=View.VISIBLE
+                holder.iv.visibility=View.VISIBLE
+                holder.videoView.visibility=View.GONE
+                holder.videoView.stopPlayback()
+            }
         }
         override fun getItemCount()=videos.size
     }

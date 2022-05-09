@@ -1,6 +1,7 @@
 package com.hk.hulkapps.ui.main
 
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -11,16 +12,22 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.hk.hulkapps.MainActivity
 import com.hk.hulkapps.MyApplication
 import com.hk.hulkapps.R
+import com.hk.hulkapps.data.model.Video
 import com.hk.hulkapps.databinding.FragmentMainBinding
 import com.hk.hulkapps.ui.adapter.CategoryAdapter
+import com.tonyodev.fetch2.*
 import javax.inject.Inject
+import com.tonyodev.fetch2.Fetch.Impl.getInstance
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
+import com.tonyodev.fetch2core.Func
+import com.tonyodev.fetch2.Download
+
+import com.tonyodev.fetch2.FetchListener
+import com.tonyodev.fetch2core.DownloadBlock
+
 
 /**
  * A simple [Fragment] subclass.
@@ -35,11 +42,13 @@ class MainFragment : Fragment() {
 
     private var _binding: FragmentMainBinding? = null
     private val binding get() = _binding!!
-
+    private var fetch: Fetch? = null
     private val categoryAdapter=CategoryAdapter(arrayListOf())
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         (requireActivity().application as MyApplication).appComponent.mainComponent().create().inject(this)
+        val fetchConfiguration: FetchConfiguration = FetchConfiguration.Builder(context!!).build()
+        fetch = getInstance(fetchConfiguration)
     }
 
     override fun onCreateView(
@@ -61,13 +70,119 @@ class MainFragment : Fragment() {
             binding.swipeRefreshLayout.isRefreshing=false
             viewModel.refresh()
         }
+        binding.switchButton.setOnCheckedChangeListener { _, isChecked ->
+            // do whatever you need to do when the switch is toggled here
+            if(isChecked){
+                binding.switchButton.text=getString(R.string.offline_mode_on)
+                //Download all file
+                downloadVideos()
+            }else{
+                binding.switchButton.text=getString(R.string.offline_mode_off)
+            }
+        }
         observerViewModels()
         viewModel.loadMovies()
     }
+
+    private fun downloadVideos() {
+        var requests: MutableList<Request> = mutableListOf()
+        var id=0
+        viewModel.items.value?.forEach { category ->
+            category.videos.forEach { video ->
+                val url=video.sources[0]
+                val fileName = url.substring( url.lastIndexOf('/')+1, url.length )
+                val file = context!!.filesDir.absolutePath+"/"+fileName
+                val request = Request(url, file)
+                request.priority=Priority.HIGH
+                request.networkType=NetworkType.ALL
+                request.tag=id.toString()
+                fetch!!.enqueue(request)
+                requests.add(request)
+            }
+        }
+//        fetch!!.enqueue(requests)
+        val fetchListener: FetchListener = object : FetchListener {
+            override fun onAdded(download: Download) {
+                Log.i("asd","onAdded"+download.file)
+            }
+
+            override fun onCancelled(download: Download) {
+                Log.i("asd","onCancelled"+download.file)
+            }
+
+            override fun onCompleted(download: Download) {
+                Log.i("asd","downloaded"+download.file)
+                var id=0
+                viewModel.items.value?.forEach { category ->
+                    category.videos.forEach { video ->
+                        if(id.toString().equals(download.tag)){
+                            video.didDownload=true
+                            return@forEach
+                        }
+                        id++
+                    }
+                }
+            }
+
+            override fun onDeleted(download: Download) {
+                Log.i("asd","onDeleted"+download.file)
+            }
+
+            override fun onDownloadBlockUpdated(
+                download: Download,
+                downloadBlock: DownloadBlock,
+                totalBlocks: Int
+            ) {
+            }
+
+            override fun onError(download: Download, error: Error, throwable: Throwable?) {
+                Log.i("asd","error"+error.name)
+            }
+
+            override fun onPaused(download: Download) {
+                Log.i("asd","onPaused"+download.file)
+            }
+
+            override fun onProgress(
+                download: Download,
+                etaInMilliSeconds: Long,
+                downloadedBytesPerSecond: Long
+            ) {
+                val progress: Int = download.progress
+                Log.i("bsd","progress= "+progress)
+            }
+
+            override fun onQueued(download: Download, waitingOnNetwork: Boolean) {
+                Log.i("asd","onQueued"+download.file)
+            }
+
+            override fun onRemoved(download: Download) {
+            }
+
+            override fun onResumed(download: Download) {
+            }
+
+            override fun onStarted(
+                download: Download,
+                downloadBlocks: List<DownloadBlock>,
+                totalBlocks: Int
+            ) {
+                Log.i("asd","downloadStarted")
+            }
+
+            override fun onWaitingNetwork(download: Download) {
+                Log.i("asd","onWaitingNetwork"+download.file)
+            }
+
+        }
+        fetch!!.addListener(fetchListener)
+    }
+
     private fun observerViewModels() {
         viewModel.items.observe(viewLifecycleOwner, Observer {category->
             category?.let {
                 binding.rcv.visibility=View.VISIBLE
+                binding.switchButton.visibility=View.VISIBLE
                 categoryAdapter.updateData(it)
             }
         })
